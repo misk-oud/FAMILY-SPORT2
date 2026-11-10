@@ -270,6 +270,17 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){#splash{animation-delay:.6s}#splash::before,#splash .card2,#splash .bar i{animation:none}}
 #splash .logo{height:96px}
 
+/* تكبير صورة المنتج */
+.art:has(.pimg),.item .th:has(.pimg){cursor:zoom-in}
+.art:has(.pimg)::after{content:"";position:absolute;inset-block-end:8px;inset-inline-end:8px;width:32px;height:32px;border-radius:50%;background:rgba(13,13,13,.62) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='M20 20l-4.2-4.2M11 8.5v5M8.5 11h5'/%3E%3C/svg%3E") center/20px no-repeat;pointer-events:none}
+.lb{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px;background:rgba(5,5,5,.88);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:lbfade .2s ease-out}
+.lb figure{margin:0;display:grid;gap:12px;justify-items:center;max-width:min(94vw,760px)}
+.lb img{max-width:100%;max-height:78vh;max-height:78dvh;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.6);animation:lbpop .25s ease-out}
+.lb figcaption{color:#fff;font-weight:700;font-size:1.05rem;text-align:center}
+.lb .xbtn{position:absolute;inset-block-start:max(14px,env(safe-area-inset-top,0px));inset-inline-end:14px;width:46px;height:46px;font-size:1.7rem}
+@keyframes lbfade{from{opacity:0}to{opacity:1}}
+@keyframes lbpop{from{transform:scale(.94)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.lb,.lb img{animation:none}}
 .social{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
 .btn.soc{color:#fff;border-color:transparent;padding-inline:12px}
 .btn.soc.fb{background:linear-gradient(135deg,#1877F2,#0B57C4)}
@@ -511,6 +522,11 @@ button,.btn,.chip,select,.iconbtn{touch-action:manipulation;-webkit-tap-highligh
     <div class="cbody" id="cbody"></div>
     <div class="cfoot" id="cfoot"></div>
   </aside>
+</div>
+
+<div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Product image" hidden>
+  <button class="xbtn" id="lbClose" type="button" aria-label="Close">&times;</button>
+  <figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
 </div>
 
 <a class="fab" id="fab" target="_blank" rel="noopener" href="#" aria-label="WhatsApp"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#waIcon"/></svg><span data-i18n="wa_fab">كلمنا على واتساب</span></a>
@@ -802,7 +818,40 @@ document.addEventListener('input', function(e){
 $('cartBtn').addEventListener('click', openCart);
 $('closeCart').addEventListener('click', closeCart);
 $('veil').addEventListener('click', closeCart);
-document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('cartLayer').hidden) closeCart(); });
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  if (!$('lb').hidden){ closeLb(); return; }
+  if (!$('cartLayer').hidden) closeCart();
+});
+
+/* ======================================================================
+   JS: تكبير صورة المنتج عند الضغط عليها
+   ====================================================================== */
+var lbLast = null;
+function openLb(src, caption){
+  lbLast = document.activeElement;
+  $('lbImg').src = src;
+  $('lbImg').alt = caption || '';
+  $('lbCap').textContent = caption || '';
+  $('lb').hidden = false;
+  $('lbClose').focus();
+}
+function closeLb(){
+  $('lb').hidden = true;
+  $('lbImg').removeAttribute('src');
+  if (lbLast && lbLast.focus) lbLast.focus();
+}
+document.addEventListener('click', function(e){
+  var box = e.target.closest('.art, .item .th');
+  if (!box) return;
+  var img = box.querySelector('.pimg');
+  if (!img) return;
+  var holder = box.closest('.card, .item');
+  var h = holder && holder.querySelector('h3, b');
+  openLb(img.currentSrc || img.src, h ? h.textContent : '');
+});
+$('lbClose').addEventListener('click', closeLb);
+$('lb').addEventListener('click', function(e){ if (e.target === $('lb') || e.target.tagName === 'FIGURE') closeLb(); });
 $('langBtn').addEventListener('click', function(){
   lang = lang === 'ar' ? 'en' : 'ar';
   try { localStorage.setItem('fs-lang', lang); } catch(e){}
